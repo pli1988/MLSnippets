@@ -37,7 +37,7 @@ class Model(ABC):
         # predicted class (arg max)
         self.pred = tf.argmax(_probs, axis = 1)
         
-    def train(self, X_train, y_train,num_epoch, batch_size, initialize = False, verbose = False):
+    def train(self, X_train, y_train,num_epoch, batch_size, metric = None, initialize = False, verbose = False):
         
         if not self.initialize or initialize:
             print('Initializing Model')
@@ -48,7 +48,7 @@ class Model(ABC):
         N = len(X_train)
 
         idx = np.arange(N)
-        n = (N%batch_size)*batch_size
+        n = (N//batch_size)*batch_size
         loss_val = []
 
         for epoch in range(num_epoch):
@@ -69,9 +69,18 @@ class Model(ABC):
                 loss_val.append(_l)
                 
             if verbose:
-                _y_pred = self.predict(X_train[:500])
-                _y_train = y_train[:500].argmax(1)
-                print('Epoch {}   Train Acuracy {}'.format(epoch+1, accuracy(_y_train, _y_pred)))
+                _y_pred = self.predict(X_train)
+                _y_train = y_train
+                
+                if metric:
+                
+                    print('Epoch {}   Train Acuracy {}'.format(epoch+1, metric(_y_train, _y_pred)))
+                    
+                else:
+                    feed_dict = {self.x: X_train, self.ground_truth: y_train}
+                    _l = self.sess.run(self.loss, feed_dict=feed_dict)
+                    
+                    print('Epoch {}   Train Acuracy {}'.format(epoch+1, _l))
                 
         return loss_val
     
